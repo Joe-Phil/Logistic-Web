@@ -1,11 +1,12 @@
 <script setup>
-import AppLayout from '@/Layouts/AppLayout.vue'
+import AppLayout from '@/layouts/AppLayout.vue'
 import { useForm, Link } from '@inertiajs/vue3'
 
 const form = useForm({
   nama_produk: '',
   harga: '',
-  stok: ''
+  stok: '',
+  kategori: ''
 })
 
 const submit = () => form.post('/produk')
@@ -65,6 +66,21 @@ const submit = () => form.post('/produk')
           />
         </div>
 
+        <!-- Kategori -->
+        <div>
+          <label class="block text-sm font-semibold text-black mb-1">
+            Kategori
+          </label>
+          <input
+            v-model="form.kategori"
+            type="text"
+            placeholder="Contoh: Laptop"
+            class="w-full rounded-lg border border-blue-300 px-4 py-2
+                text-black placeholder-gray-500
+                focus:border-blue-600 focus:ring-blue-600"
+          />
+        </div>
+
         <!-- Action -->
         <div class="flex justify-between items-center pt-4">
           <Link href="/produk" class="text-blue-600 hover:underline">
@@ -78,21 +94,6 @@ const submit = () => form.post('/produk')
           >
             Simpan
           </button>
-        </div>
-
-                <!-- Kategori -->
-        <div>
-        <label class="block text-sm font-semibold text-black mb-1">
-            Kategori
-        </label>
-        <input
-            v-model="form.kategori"
-            type="text"
-            placeholder="Contoh: Laptop"
-            class="w-full rounded-lg border border-blue-300 px-4 py-2
-                text-black placeholder-gray-500
-                focus:border-blue-600 focus:ring-blue-600"
-        />
         </div>
 
       </form>
