@@ -1,15 +1,25 @@
 <template>
   <div class="min-h-screen bg-white text-black font-sans flex flex-col">
-    
+
     <!-- Navbar / Header -->
     <header class="bg-blue-600 text-white shadow-md">
       <div class="max-w-6xl mx-auto flex justify-between items-center p-4">
         <h1 class="text-xl font-bold">Logistic Web</h1>
-        <nav class="space-x-4">
-          <Link href="/" class="hover:underline">Home</Link>
-          <Link href="/dashboard" class="hover:underline">Dashboard</Link>
-          <Link href="/produk" class="hover:underline">Produk</Link>
-        </nav>
+        <div class="flex items-center space-x-4">
+          <nav class="space-x-4">
+            <Link href="/" class="hover:underline">Home</Link>
+            <Link href="/dashboard" class="hover:underline">Dashboard</Link>
+            <Link href="/produk" class="hover:underline">Produk</Link>
+          </nav>
+          <Link
+            :href="logout()"
+            method="post"
+            as="button"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 cursor-pointer"
+          >
+            Logout
+          </Link>
+        </div>
       </div>
     </header>
 
@@ -27,6 +37,7 @@
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
+import { logout } from '@/routes'
 </script>
 
 <style>
