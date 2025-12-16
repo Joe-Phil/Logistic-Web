@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
+use App\Models\ProdukStockLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -44,7 +45,16 @@ class ProdukController extends Controller
             'kategori' => 'required|string',
         ]);
 
-        Produk::create($request->all());
+        $produk = Produk::create($request->all());
+
+        if ($produk->stok) {
+            ProdukStockLog::create([
+                'produk_id' => $produk->id,
+                'change' => $produk->stok,
+                'type' => 'in',
+                'description' => 'Stok awal produk baru',
+            ]);
+        }
         return redirect()->route('produk.index');
     }
 
@@ -57,6 +67,7 @@ class ProdukController extends Controller
     public function update(Request $request, $id)
     {
         $produk = Produk::findOrFail($id);
+        $stokSebelum = $produk->stok;
         $request->validate([
             'nama_produk' => 'required|string',
             'harga' => 'required|integer',
@@ -65,6 +76,16 @@ class ProdukController extends Controller
         ]);
 
         $produk->update($request->all());
+
+        $delta = $produk->stok - $stokSebelum;
+        if ($delta !== 0) {
+            ProdukStockLog::create([
+                'produk_id' => $produk->id,
+                'change' => $delta,
+                'type' => $delta > 0 ? 'in' : 'out',
+                'description' => $delta > 0 ? 'Penambahan stok' : 'Pengurangan stok',
+            ]);
+        }
         return redirect()->route('produk.index');
     }
 
@@ -75,10 +96,27 @@ class ProdukController extends Controller
         // Jika request ada 'hapus_stok' (jumlah tertentu), kurangi stok
         if ($request->has('hapus_stok')) {
             $hapus = (int) $request->input('hapus_stok');
-            $produk->stok = max(0, $produk->stok - $hapus);
+            $change = -min($hapus, $produk->stok);
+            $produk->stok = max(0, $produk->stok + $change);
             $produk->save();
+            if ($change !== 0) {
+                ProdukStockLog::create([
+                    'produk_id' => $produk->id,
+                    'change' => $change,
+                    'type' => 'out',
+                    'description' => 'Pengurangan stok parsial',
+                ]);
+            }
         } else {
             // hapus seluruh stock / produk
+            if ($produk->stok) {
+                ProdukStockLog::create([
+                    'produk_id' => $produk->id,
+                    'change' => -$produk->stok,
+                    'type' => 'out',
+                    'description' => 'Penghapusan produk',
+                ]);
+            }
             $produk->delete();
         }
 

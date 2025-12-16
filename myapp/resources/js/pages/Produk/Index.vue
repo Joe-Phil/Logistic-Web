@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-const { produk, search } = defineProps({
+const { produk, search, sort_by, sort_dir } = defineProps({
   produk: { type: Array, default: () => [] },
   search: { type: String, default: '' },
   sort_by: { type: String, default: 'id' },
@@ -19,13 +19,22 @@ const { produk, search } = defineProps({
 
 const isModalOpen = ref(false)
 const isEditModalOpen = ref(false)
+const isSortModalOpen = ref(false)
+
+const sortBy = ref(sort_by || 'id')
+const sortDir = ref(sort_dir || 'asc')
+
 const searchTerm = ref(search || '')
 
 let searchTimer
 watch(searchTerm, (value) => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    router.get('/produk', { search: value }, { preserveState: true, replace: true, preserveScroll: true })
+    router.get(
+      '/produk',
+      { search: value, sort_by: sortBy.value, sort_dir: sortDir.value },
+      { preserveState: true, replace: true, preserveScroll: true }
+    )
   }, 300)
 })
 
@@ -103,6 +112,23 @@ const deleteItem = () => {
   })
 }
 
+const applySort = () => {
+  router.get(
+    '/produk',
+    {
+      search: searchTerm.value,
+      sort_by: sortBy.value,
+      sort_dir: sortDir.value,
+    },
+    {
+      preserveState: true,
+      replace: true,
+      preserveScroll: true,
+    }
+  )
+  isSortModalOpen.value = false
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
@@ -121,23 +147,30 @@ const formatDate = (dateString) => {
     <div class="max-w-6xl mx-auto">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-bold text-black">Manajemen Produk</h2>
-        <button 
-          @click="isModalOpen = true" 
+        <button
+          @click="isModalOpen = true"
           class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700"
         >
           + Tambah Produk
         </button>
       </div>
-    <div class="mb-4">
+      <div class="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Cari nama barang..."
-            class="w-full md:w-1/3 rounded-lg border border-blue-300 px-4 py-2
-                text-black placeholder-gray-500
-                focus:border-blue-600 focus:ring focus:ring-blue-200"
+          v-model="searchTerm"
+          type="text"
+          placeholder="Cari nama barang..."
+          class="w-full md:w-1/3 rounded-lg border border-blue-300 px-4 py-2
+                 text-black placeholder-gray-500
+                 focus:border-blue-600 focus:ring focus:ring-blue-200"
         />
-    </div>
+        <button
+          type="button"
+          @click="isSortModalOpen = true"
+          class="inline-flex items-center justify-center rounded-lg border border-blue-300 px-4 py-2 text-sm font-medium text-blue-700 bg-white hover:bg-blue-50"
+        >
+          Sortir
+        </button>
+      </div>
 
       <div class="bg-white rounded-2xl shadow overflow-hidden">
         <table class="w-full text-black">
@@ -178,6 +211,92 @@ const formatDate = (dateString) => {
             </tbody>
         </table>
       </div>
+
+      <!-- Modal Sortir -->
+      <Dialog :open="isSortModalOpen" @update:open="(value) => { isSortModalOpen = value }">
+        <DialogContent class="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle class="text-2xl font-bold text-black text-center">
+              Pengurutan Data
+            </DialogTitle>
+          </DialogHeader>
+
+          <div class="space-y-6 text-black">
+            <div>
+              <p class="text-sm font-semibold mb-2">Sortir berdasarkan</p>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="id" v-model="sortBy" />
+                  <span>ID</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="nama_produk" v-model="sortBy" />
+                  <span>Nama</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="kategori" v-model="sortBy" />
+                  <span>Kategori</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="harga" v-model="sortBy" />
+                  <span>Harga Satuan</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="stok" v-model="sortBy" />
+                  <span>Stok</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="updated_at" v-model="sortBy" />
+                  <span>Last Updated</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-sm font-semibold mb-2">Urutan</p>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="asc" v-model="sortDir" />
+                  <span>
+                    <span v-if="sortBy === 'nama_produk'">A-Z</span>
+                    <span v-else-if="sortBy === 'harga'">Rendah ke Tinggi</span>
+                    <span v-else-if="sortBy === 'stok'">Rendah ke Tinggi</span>
+                    <span v-else-if="sortBy === 'updated_at'">Terlama ke Terbaru</span>
+                    <span v-else>Ascending</span>
+                  </span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="radio" value="desc" v-model="sortDir" />
+                  <span>
+                    <span v-if="sortBy === 'nama_produk'">Z-A</span>
+                    <span v-else-if="sortBy === 'harga'">Tinggi ke Rendah</span>
+                    <span v-else-if="sortBy === 'stok'">Tinggi ke Rendah</span>
+                    <span v-else-if="sortBy === 'updated_at'">Terbaru ke Terlama</span>
+                    <span v-else>Descending</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter class="flex justify-between items-center pt-4">
+              <button
+                type="button"
+                @click="isSortModalOpen = false"
+                class="text-blue-600 hover:underline"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                @click="applySort"
+                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
+                Terapkan
+              </button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <!-- Modal Tambah Produk -->
       <Dialog :open="isModalOpen" @update:open="(value) => { isModalOpen = value; if (!value) { form.reset(); form.clearErrors(); } }">
